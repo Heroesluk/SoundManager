@@ -1,8 +1,6 @@
 import speech_recognition as sr
 
 
-
-
 class Matcher():
 
     def __init__(self):
@@ -14,7 +12,7 @@ class Matcher():
             for key_word in hint.keywords:
                 if key_word in data:
                     if checkpoint >= max(hint.requirements):
-                        return True
+                        return hint.wskazowka
 
         return False
 
@@ -33,13 +31,14 @@ class Matcher():
 
 
 class Hint():
-    def __init__(self, keywords=None, requirements=None):
+    def __init__(self, keywords=None, requirements=None, wskazowka=None):
         if not keywords:
             self.keywords = ["podpowiedz", "wskazówke", "pomoc", "nie wiem"]
         if not requirements:
             self.requirements = [1, 2]
 
-
+        if not wskazowka:
+            self.wskazowka = "Pojdz w prawo"
 
 
 m1 = Matcher()
@@ -53,5 +52,4 @@ with mic as source:
 
 output = r.recognize_google(audio, language="pl-PL")
 
-
-print(m1.match(output,3))
+print(m1.match(output, 3))
