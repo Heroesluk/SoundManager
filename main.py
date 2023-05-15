@@ -1,55 +1,92 @@
+import random
+
 import speech_recognition as sr
+from playsound import playsound
 
 
-class Matcher():
+def flatten(data):
+    protected = ['ą', 'ę', 'ż', 'ź', 'ć', 'ś']
+    replaced = ['a', 'e', 'z', 'z', 'c', 's']
+    fixed = ""
+    for chr in data:
+        if chr in protected:
+            fixed += replaced[protected.index(chr)]
+        else:
 
-    def __init__(self):
-        self.hints = [Hint()]
+            fixed += chr
+
+    return fixed
+
+
+class HintMatcher():
+
+    def __init__(self, hints):
+        self.hints = hints
+        self.no_hint = random.choice(["10_out_of_hints_on_your_own_pitch.wav", "09_out_of_hints_intel.wav"])
 
     def match(self, data, checkpoint):
-        data = self.flatten(data)
+        data = flatten(data)
         for hint in self.hints:
-            for key_word in hint.keywords:
-                if key_word in data:
-                    if checkpoint >= max(hint.requirements):
-                        return hint.wskazowka
+            if hint.requirements == checkpoint:
+                for phrase in hint.keywords:
+                    if phrase.lower() in data.lower():
+                        return hint.hint_path
 
-        return False
 
-    def flatten(self, data):
-        protected = ['ą', 'ę', 'ż', 'ź', 'ć', 'ś']
-        replaced = ['a', 'e', 'z', 'z', 'c', 's']
-        fixed = ""
-        for chr in data:
-            if chr in protected:
-                fixed += replaced[protected.index(chr)]
-            else:
 
-                fixed += chr
-
-        return fixed
+        return self.no_hint
 
 
 class Hint():
-    def __init__(self, keywords=None, requirements=None, wskazowka=None):
-        if not keywords:
-            self.keywords = ["podpowiedz", "wskazówke", "pomoc", "nie wiem"]
-        if not requirements:
-            self.requirements = [1, 2]
-
-        if not wskazowka:
-            self.wskazowka = "Pojdz w prawo"
+    def __init__(self, keywords=None, requirements=None, hint=None):
+        self.keywords = keywords
+        self.requirements = requirements
+        self.hint_path = hint
 
 
-m1 = Matcher()
+def play_hint(filename):
+    playsound("Renders/{}".format(filename))
 
-r = sr.Recognizer()
 
-mic = sr.Microphone()
-with mic as source:
-    r.adjust_for_ambient_noise(source)
-    audio = r.listen(source, timeout=3, phrase_time_limit=6)
 
-output = r.recognize_google(audio, language="pl-PL")
+def call_microphone():
+    recognizer = sr.Recognizer()
 
-print(m1.match(output, 3))
+    mic = sr.Microphone()
+    with mic as source:
+        # wait 1 second before providing sound input
+        recognizer.adjust_for_ambient_noise(source)
+        audio = recognizer.listen(source, timeout=3, phrase_time_limit=6)
+
+    return recognizer.recognize_google(audio, language="pl-PL")
+
+
+# just a simple simulation
+def game():
+    # assume this is the first hint in game
+    hint1 = Hint(["Give us", "Hint", "we need help", "how do we", "what should we"], 0, "04_hint_forensics.wav")
+
+    hint2 = Hint(["Give us", "Hint", "we need help", "how do we", "what should we"], 1, "05_hint_date.wav.wav")
+    hint3 = Hint(["Give us", "Hint", "we need help", "how do we", "what should we"], 2, "06_hint_lock.wav.wav")
+
+    hint_lvl = 0
+
+    matcher = HintMatcher([hint1, hint2])
+
+    input()
+
+    hint_lvl += 1
+    text = call_microphone()
+    hint_path = matcher.match(text, hint_lvl)
+    play_hint(hint_path)
+
+    input()
+
+    hint_lvl += 1
+    text = call_microphone()
+    hint_path = matcher.match(text, hint_lvl)
+    play_hint(hint_path)
+
+
+
+game()
